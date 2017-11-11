@@ -1,14 +1,14 @@
 const list = [
   {
-    title : "first",
-    author : "first author",
+    title : "First",
+    author : "First author",
     url : "www.yahoo.com",
     comment : 1,
     point :1
   },
   {
-    title : "second",
-    author : "second author",
+    title : "Second",
+    author : "Second author",
     url : "www.yahoo.com",
     comment : 2,
     point :2
