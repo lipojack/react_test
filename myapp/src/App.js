@@ -27,6 +27,7 @@ class App extends Component {
     super(props);
     this.state = {
       result: null,
+      searchKey: '',
       searchTerm: DEFAULT_QUERY
     }
     this.removeItem = this.removeItem.bind(this);
@@ -36,11 +37,17 @@ class App extends Component {
     this.onSubmit = this.onSubmit.bind(this);
   }
 
+  checkTopStoriesSearchTerm(searchTerm){
+    return !this.state.results[searchTerm];
+  }
+
   setTopStories(result){
     const {hits, page} = result;
-    const oldHits = page !== 0 ? this.state.result.hits : [];
+    //const oldHits = page !== 0 ? this.state.result.hits : [];
+    const { searchKey, results } = this.state;
+    const oldHits = results && results[searchKey] ? results[searchKey].hits : [];
     const updatedHits = [...oldHits, ...hits];
-    this.setState({ result: { hits: updatedHits, page } });
+    this.setState({ results: {...results, [searchKey]: { hits: updatedHits, page }} });
   }
 
   fetchTopStories(searchTerm, page){
@@ -51,21 +58,29 @@ class App extends Component {
   }
 
   componentDidMount(){
-    this.fetchTopStories(this.state.searchTerm, DEFAULT_PAGE);
+    const { searchTerm } = this.state;
+    this.setState({ searchKey: searchTerm });
+    this.fetchTopStories(searchTerm, DEFAULT_PAGE);
   }
 
-  onSubmit(event, DEFAULT_PAGE){
-    this.fetchTopStories(this.state.searchTerm);
+  onSubmit(event){
+    const { searchTerm } = this.state;
+    this.setState({ searchKey: searchTerm });
+    
+    if (this.checkTopStoriesSearchTerm(searchTerm)){
+      this.fetchTopStories(searchTerm, DEFAULT_PAGE);  
+    }
     event.preventDefault();
   }
 
   // ES6 
   removeItem(id){
-    const { result } = this.state;
-    const isNotId = item => item.title != id;
-    const updatedList = result.hits.filter(isNotId);
+    const { results, searchKey } = this.state;
+    const { hits, page } = results[searchKey];
+    const isNotId = item => item.objectID !== id;
+    const updatedList = hits.filter(isNotId);
     //this.setState({ result: Object.assign({}, result, { hits: updatedList }) });
-    this.setState({ result: {...result, hits: updatedList} });
+    this.setState({ results: {...results, [searchKey]: {hits: updatedList}, page} });
   }
 
   searchValue(event){
@@ -74,38 +89,43 @@ class App extends Component {
 
   render() {
     // Destructing
-    const {result, searchTerm} = this.state;
-    const page = (result && result.page) || 0;
+    const {results, searchTerm, searchKey} = this.state;
+    const page = (results && results[searchKey] && results[searchKey].page) || 0;
+    const list = (results && results[searchKey] && results[searchKey].hits) || [];
     return (
-      <div className = "App">
+      <div>
         
         <Grid fluid>
           <Row>
-            <div className="jumbotron">
+            <div className="jumbotron text-center">
               <Search 
                 onChange = {this.searchValue} 
                 value = {searchTerm}
                 onSubmit = { this.onSubmit }
-              >Search : </Search>
+              >Hack News </Search>
             </div>
           </Row>
         </Grid>
         
-        { result &&
-          <Table
-            list = {result.hits}
-            searchTerm = {searchTerm}
-            removeItem = {this.removeItem}
-          />
-        }
+        <Grid>
+          <Row>
+            <Table
+              list = {list}
+              searchTerm = {searchTerm}
+              removeItem = {this.removeItem}
+            />
+        
           
-          <div className = "text-center alert">
-            <Button
-              className = "btn btn-success"
-              onClick = { () => this.fetchTopStories(searchTerm, page + 1) }>
-              Load more
-            </Button>
-          </div>
+            <div className = "text-center alert">
+              <Button
+                className = "btn btn-success"
+                onClick = { () => this.fetchTopStories(searchTerm, page + 1) }>
+                Load more
+              </Button>
+            </div>   
+          </Row>
+        </Grid>
+        
           
 
       </div>
@@ -121,15 +141,21 @@ const Search = ({onChange, value, children, onSubmit}) =>{
   return(
     <form onSubmit = { onSubmit }>
       <FormGroup>
+        <h1 style={{color:'#F96D00'}}>{children}</h1>
+        <hr style={{color:'#000000', width:'100px'}}/>
+        
         <div className = 'input-group'>
+          
           <input
-            className = 'form-control width100'
+            className = 'form-control width100 searchForm'
             type = 'text' 
             onChange = { onChange } 
             value = {value} 
           />
-          <span className = 'input-group-btn'>
-            <Button className = 'btn btn-primary' type = 'submit'>
+          
+          <span 
+            className = 'input-group-btn'>
+            <Button className = 'btn btn-primary searchBtn' type = 'submit'>
               Search
             </Button>
           </span>
@@ -142,20 +168,25 @@ const Search = ({onChange, value, children, onSubmit}) =>{
 // Stateless functional Component
 const Table = ({list, searchTerm, removeItem}) =>{
   return(
-    <div>
+    <div className='col-sm-10 col-sm-offset-1'>
       {
         // Don't use index as key : https://medium.com/@robinpokorny/index-as-a-key-is-an-anti-pattern-e0349aece318
         // list.filter( isSearched(searchTerm) ).map((item)=>
         list.map((item)=>
-            <div key={item.title}>
-              <h1><a href ={item.url}>{item.title}</a> by {item.author}</h1>
-              <h2>comment : {item.num_comments} | point : {item.points}</h2>
-              <Button
-                className = 'btn btn-danger'
-                type = 'button'
-                onClick = {()=>removeItem(item.title)}>
-                Remove
-              </Button>
+            <div key={item.objectID}>
+              <h2><a href ={item.url}>{item.title}</a></h2>
+              <h4>
+                
+                { item.author } | {item.num_comments} comments | {item.points} points
+                
+                <Button
+                  className = 'btn btn-danger btn-xs'
+                  type = 'button'
+                  onClick = {()=>removeItem(item.objectID)}>
+                  Remove
+                </Button>
+              
+              </h4><hr/>
             </div>
         )
       }
