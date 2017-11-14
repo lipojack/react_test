@@ -21,8 +21,6 @@ console.log(url);
 
 class App extends Component {
   
-  // Set up component state
-  // ES6 can use constructor to initialize internal state
   constructor(props){
     super(props);
     this.state = {
@@ -37,19 +35,21 @@ class App extends Component {
     this.onSubmit = this.onSubmit.bind(this);
   }
 
+  // Check repeated search
   checkTopStoriesSearchTerm(searchTerm){
     return !this.state.results[searchTerm];
   }
 
+  // Set result
   setTopStories(result){
     const {hits, page} = result;
-    //const oldHits = page !== 0 ? this.state.result.hits : [];
     const { searchKey, results } = this.state;
     const oldHits = results && results[searchKey] ? results[searchKey].hits : [];
     const updatedHits = [...oldHits, ...hits];
     this.setState({ results: {...results, [searchKey]: { hits: updatedHits, page }} });
   }
 
+  // API request
   fetchTopStories(searchTerm, page){
     fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}`)
       .then(response => response.json())
@@ -67,13 +67,14 @@ class App extends Component {
     const { searchTerm } = this.state;
     this.setState({ searchKey: searchTerm });
     
+    // Prevent repeated API call
     if (this.checkTopStoriesSearchTerm(searchTerm)){
       this.fetchTopStories(searchTerm, DEFAULT_PAGE);  
     }
+    // If repeated, use cache
     event.preventDefault();
   }
 
-  // ES6 
   removeItem(id){
     const { results, searchKey } = this.state;
     const { hits, page } = results[searchKey];
@@ -88,13 +89,11 @@ class App extends Component {
   }
 
   render() {
-    // Destructing
     const {results, searchTerm, searchKey} = this.state;
     const page = (results && results[searchKey] && results[searchKey].page) || 0;
     const list = (results && results[searchKey] && results[searchKey].hits) || [];
     return (
-      <div>
-        
+      <div>    
         <Grid fluid>
           <Row>
             <div className="jumbotron text-center">
@@ -125,9 +124,6 @@ class App extends Component {
             </div>   
           </Row>
         </Grid>
-        
-          
-
       </div>
 
       
@@ -136,7 +132,6 @@ class App extends Component {
   }
 }
 
-// Stateless functional Component
 const Search = ({onChange, value, children, onSubmit}) =>{
   return(
     <form onSubmit = { onSubmit }>
@@ -165,7 +160,6 @@ const Search = ({onChange, value, children, onSubmit}) =>{
   )
 }
 
-// Stateless functional Component
 const Table = ({list, searchTerm, removeItem}) =>{
   return(
     <div className='col-sm-10 col-sm-offset-1'>
@@ -194,7 +188,6 @@ const Table = ({list, searchTerm, removeItem}) =>{
   )
 }
 
-// Stateless functional Component
 const Button = ({ onClick, children, className }) =>
   <button 
     onClick = { onClick }
